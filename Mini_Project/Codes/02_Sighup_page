@@ -1,0 +1,171 @@
+import static java.lang.Thread.sleep;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.annotation.SuppressLint;
+import android.os.Bundle;
+import android.text.TextUtils;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.FirebaseNetworkException;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
+import com.google.firebase.auth.FirebaseAuthUserCollisionException;
+import com.google.firebase.auth.FirebaseAuthWeakPasswordException;
+import com.google.firebase.database.FirebaseDatabase;
+
+import java.util.Arrays;
+import java.util.Objects;
+
+public class signup extends AppCompatActivity {
+  private FirebaseAuth auth;
+Button register;
+ProgressBar pb;
+TextView email,pass,cpass,message,mailerror,cpasserror,passerror,cancel,no;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_signup);
+        Objects.requireNonNull(getSupportActionBar()).hide();
+        register=findViewById(R.id.register);
+        email=findViewById(R.id.email);
+        cancel=findViewById(R.id.cancel);
+        pass=findViewById(R.id.pass);
+        mailerror=findViewById(R.id.mailerror);
+        passerror=findViewById(R.id.passerror);
+        cpasserror=findViewById(R.id.cpasserror);
+        message=findViewById(R.id.message);
+        cpass=findViewById(R.id.cpass);
+        pb=findViewById(R.id.progressBar);
+        no=findViewById(R.id.no);
+        auth=FirebaseAuth.getInstance();
+        register.setOnClickListener(new View.OnClickListener() {
+
+            @SuppressLint("SetTextI18n")
+            @Override
+            public void onClick(View view) {
+                pb.setVisibility(View.VISIBLE);
+                String mail = email.getText().toString();
+                String pass1 = pass.getText().toString();
+                String cpass1 = cpass.getText().toString();
+                String phno=no.getText().toString();
+                if (mail.equals("") || pass1.equals("")) {
+                    pb.setVisibility(View.GONE);
+                    Toast.makeText(getApplicationContext(), "Please Provide Information", Toast.LENGTH_SHORT).show();
+                } else {
+                    if (pass1.length() < 8) {
+                        pb.setVisibility(View.GONE);
+                        message.setText("Passworrd length is short");
+                        passerror.setError("");
+                    } else {
+
+                        if (!pass1.equals(cpass1)) {
+                            pb.setVisibility(View.GONE);
+                            message.setText("Password doesn't match");
+                            passerror.setError("");
+                            cpasserror.setError("");
+                        }
+                        if(phno.length()<10)
+                        {  pb.setVisibility(View.GONE);
+                            message.setText("Invalid phn.no");
+                        }
+                        else {
+                            putdata(mail, pass1,phno); //put into firebase
+                        }
+                    }
+                }
+            }
+        });
+
+
+        cancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finish();
+            }
+        });
+    }
+
+
+
+
+
+    void putdata(String mail,String pass,String no)
+    {
+auth.createUserWithEmailAndPassword(mail,pass).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+    @Override
+    public void onComplete(@NonNull Task<AuthResult> task) {
+
+        passerror.setError(null);
+        cpasserror.setError(null);
+        message.setText("");
+
+       if (task.isSuccessful()) {
+           FirebaseDatabase.getInstance().getReference().child(pass).setValue("password");
+           message.setText("");
+           mailerror.setError(null);
+           passerror.setError(null);
+           cpasserror.setError(null);
+           Toast.makeText(getApplicationContext(), "Account Created successfully", Toast.LENGTH_LONG).show();
+           pb.setVisibility(View.GONE);
+           finish();
+   }
+       try{ throw task.getException();
+
+       }
+
+
+       catch (FirebaseAuthInvalidCredentialsException e) {
+           pb.setVisibility(View.GONE);
+           message.setText("");
+          passerror.setError(null);
+          cpasserror.setError(null);
+
+           message.setText("!! Enter Valid e-mail ID !!");
+           mailerror.setError("");
+
+
+       }
+       catch (FirebaseNetworkException e) {
+           pb.setVisibility(View.GONE);
+           Toast.makeText(getApplicationContext(), "Check your Connection", Toast.LENGTH_SHORT).show();
+       }
+
+
+       catch (FirebaseAuthUserCollisionException e) {
+           pb.setVisibility(View.GONE);
+           mailerror.setText("");
+           message.setText("!! User Already Exists !!");
+           mailerror.setError("");
+
+       }
+       catch (Exception e) {
+           Log.e("Exception him", e.getMessage());
+       }
+
+    }
+});
+
+    }
+
+
+
+
+
+
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        finish();
+    }
+}

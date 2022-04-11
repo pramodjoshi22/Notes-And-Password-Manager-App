@@ -1,0 +1,147 @@
+import static android.os.SystemClock.sleep;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.FirebaseNetworkException;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
+import com.google.firebase.auth.FirebaseAuthInvalidUserException;
+
+import java.util.Objects;
+
+public class loginpage extends AppCompatActivity {
+TextView signup,error,e1,about,e2;
+ProgressBar pb2;
+Button login;
+
+private FirebaseAuth auth;
+EditText password,mail;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_loginpage);
+        Objects.requireNonNull(getSupportActionBar()).hide();//hide action bar
+      //  checkBox=findViewById(R.id.check);
+        password=findViewById(R.id.password);
+        mail=findViewById(R.id.mail);
+        login=findViewById(R.id.login);
+        signup=findViewById(R.id.signup);
+        error=findViewById(R.id.error);
+        e1=findViewById(R.id.e1);
+        pb2=findViewById(R.id.pb2);
+        about=findViewById(R.id.about);
+        e2=findViewById(R.id.e2);
+        auth=FirebaseAuth.getInstance();
+
+
+        signup.setOnClickListener(new View.OnClickListener() { //Sign up window opner
+           @Override
+           public void onClick(View view) {//signup page
+
+
+  Intent i=new Intent(loginpage.this, com.himanshu.myapplication.signup.class);
+  startActivity(i);
+               error.setText("");
+               e1.setError(null);
+               e2.setError(null);
+               mail.setText("");
+               password.setText("");
+
+           }
+       });
+
+      about.setOnClickListener(new View.OnClickListener() {
+          @Override
+          public void onClick(View view) {
+              Intent i=new Intent(loginpage.this,aboutus.class);
+              startActivity(i);
+          }
+      });
+
+     login.setOnClickListener(new View.OnClickListener() {
+         @Override
+         public void onClick(View view) {
+             pb2.setVisibility(View.VISIBLE);
+             String mail1=mail.getText().toString();
+             String password1=password.getText().toString();
+             if(mail1.equals("")||password1.equals(""))
+             {   pb2.setVisibility(View.GONE);
+
+               error.setText("Fields can't be empty");
+             }
+             else{
+                 e1.setError(null);
+                 e2.setError(null);
+                 signin(mail1,password1);
+             }
+         }
+     });
+
+
+    }
+void signin(String mail1, String password1)
+{
+     auth.signInWithEmailAndPassword(mail1,password1).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+         @Override
+         public void onComplete(@NonNull Task<AuthResult> task) {
+
+             if(task.isSuccessful())
+             {
+                 e1.setError(null);
+                e2.setError(null);
+             error.setText("");
+
+                 Intent i=new Intent(loginpage.this,data.class);
+                 i.putExtra("user",password1);
+                 startActivity(i);
+                 finish();//go to new activity
+                 pb2.setVisibility(View.GONE);
+             }
+            try{
+               throw task.getException();
+            }
+
+
+            catch(FirebaseAuthInvalidCredentialsException e)
+            {  pb2.setVisibility(View.GONE);
+                e1.setError("e1");
+                e2.setError("e2");
+                error.setText("Enter Valid Credentials");
+            }
+            catch (FirebaseAuthInvalidUserException e) {
+                pb2.setVisibility(View.GONE);
+                e2.setError(null);
+                error.setText("No User Found with this mail ID");
+            }
+            catch(FirebaseNetworkException e)
+            {
+                pb2.setVisibility(View.GONE);
+
+                e2.setError(null);
+                Toast.makeText(getApplicationContext(), "Check your Connection", Toast.LENGTH_SHORT).show();
+            }
+
+
+            catch (Exception e) {
+                pb2.setVisibility(View.GONE);
+                Log.e("Exception him", e.getMessage());
+                e1.setError(null);
+                e2.setError(null);
+
+            }
+         }
+     });
